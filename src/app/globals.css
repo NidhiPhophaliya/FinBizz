@@ -1,26 +1,135 @@
 @import "tailwindcss";
+@import "maplibre-gl/dist/maplibre-gl.css";
 
+/* ── Design tokens ───────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary:      #0f111a;
+  --bg-secondary:    #1a1c26;
+  --bg-tertiary:     #1d1f2e;
+  --accent-border:   #36384a;
+  --brand-blue:      #42a5f5;
+  --accent-gold:     #ffd780;
+  --accent-teal:     #00d4ff;
+  --accent-green:    #99ff88;
+  --accent-red:      #ff5050;
+  --text-primary:    #ffffff;
+  --text-muted:      #a7b1c1;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg-primary:    #0f111a;
+  --color-bg-secondary:  #1a1c26;
+  --color-bg-tertiary:   #1d1f2e;
+  --color-accent-border: #36384a;
+  --color-brand-blue:    #42a5f5;
+  --color-accent-gold:   #ffd780;
+  --color-accent-teal:   #00d4ff;
+  --color-accent-green:  #99ff88;
+  --color-accent-red:    #ff5050;
+  --color-text-primary:  #ffffff;
+  --color-text-muted:    #a7b1c1;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base reset ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+button, input, textarea, select { font: inherit; }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: #36384a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #42a5f5; }
+
+/* ── MapLibre GL overrides ───────────────────────────────────────────────── */
+.maplibregl-ctrl-logo,
+.maplibregl-ctrl-attrib { display: none !important; }
+.mapboxgl-canvas-container { cursor: grab !important; }
+.mapboxgl-canvas-container:active { cursor: grabbing !important; }
+.maplibregl-ctrl-group {
+  background: #1a1c26 !important;
+  border: 1px solid #36384a !important;
+  border-radius: 8px !important;
+}
+.maplibregl-ctrl-group button {
+  color: #a7b1c1 !important;
+}
+.maplibregl-ctrl-group button:hover {
+  background: #272937 !important;
+  color: white !important;
+}
+
+/* ── Marquee / ticker animation ─────────────────────────────────────────── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 60s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ── Globe container ─────────────────────────────────────────────────────── */
+.globe-mode canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Pulse animations ───────────────────────────────────────────────────── */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.8);  opacity: 0.9; }
+  50%  { transform: scale(1.15); opacity: 0.5; }
+  100% { transform: scale(0.8);  opacity: 0.9; }
+}
+
+@keyframes glow {
+  0%   { box-shadow: 0 0 5px #42a5f5, 0 0 10px #42a5f5; }
+  100% { box-shadow: 0 0 20px #42a5f5, 0 0 40px #42a5f540; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ── Layer panel checkbox animation ─────────────────────────────────────── */
+@keyframes checkPop {
+  0%   { transform: scale(0.6); }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* ── Tooltip fade-in ─────────────────────────────────────────────────────── */
+[data-tooltip] {
+  animation: fadeIn 0.12s ease;
 }

@@ -1,5 +1,9 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# ========================
+# Node / Next.js
+# ========================
+
 # dependencies
 /node_modules
 /.pnp
@@ -32,6 +36,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +44,76 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# ========================
+# Flutter / Dart (alpha/)
+# ========================
+
+# Flutter build artifacts
+alpha/.dart_tool/
+alpha/.flutter-plugins
+alpha/.flutter-plugins-dependencies
+alpha/.pub-cache/
+alpha/.pub/
+alpha/build/
+alpha/.packages
+
+# Dart
+*.dart.js
+*.dart.js.deps
+*.dart.js.map
+*.dart2js.js
+
+# Android
+alpha/android/.gradle/
+alpha/android/local.properties
+alpha/android/key.properties
+alpha/android/app/debug.keystore
+alpha/android/app/*.jks
+
+# iOS
+alpha/ios/.symlinks/
+alpha/ios/Flutter/App.framework/
+alpha/ios/Flutter/Flutter.framework/
+alpha/ios/Flutter/Flutter.podspec
+alpha/ios/Flutter/Generated.xcconfig
+alpha/ios/Flutter/ephemeral/
+alpha/ios/Pods/
+alpha/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+
+# macOS
+alpha/macos/Flutter/GeneratedPluginRegistrant.swift
+alpha/macos/Flutter/ephemeral/
+
+# Windows
+alpha/windows/flutter/generated_plugin_registrant.cc
+alpha/windows/flutter/generated_plugin_registrant.h
+alpha/windows/flutter/generated_plugins.cmake
+
+# Linux
+alpha/linux/flutter/generated_plugin_registrant.cc
+alpha/linux/flutter/generated_plugin_registrant.h
+alpha/linux/flutter/generated_plugins.cmake
+
+# Web
+alpha/web/flutter_service_worker.js
+
+# Coverage
+alpha/coverage/
+
+# IDE / Editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

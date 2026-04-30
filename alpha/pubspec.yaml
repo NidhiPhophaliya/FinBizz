@@ -1,0 +1,79 @@
+name: alpha
+description: "The companion app for the IIC Cashflow Game"
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
+
+version: 0.4.1+4
+
+environment:
+  sdk: ">=3.3.1 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.6
+  provider: ^6.1.2
+  lottie: ^3.1.2
+  get_it: ^7.7.0
+  vector_math: ^2.1.4
+  logging: ^1.2.0
+  intl: ^0.19.0
+  confetti: ^0.8.0
+  carousel_slider: ^5.0.0
+  auto_size_text: ^3.0.0
+  equatable: ^2.0.7
+  flip_card: ^0.7.0
+  flutter_animate: ^4.5.2
+  dev: ^1.0.0
+  flutter_launcher_icons: ^0.14.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  test: ^1.25.8
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/anim/
+    - assets/images/
+    - assets/images/avatars/
+    - assets/images/budgeting/
+    - assets/images/board_tiles/
+    - assets/images/car/
+    - assets/images/career/
+    - assets/images/dashboard/
+    - assets/images/logo/
+    - assets/images/opportunity/
+    - assets/images/personal_life/
+    - assets/images/real_estate/
+    - assets/images/goals/
+
+  fonts:
+    - family: PublicSans
+      fonts:
+        - asset: assets/fonts/PublicSans/PublicSans-Black.ttf
+          weight: 900
+
+    - family: LexendMega
+      fonts:
+        - asset: assets/fonts/LexendMega/LexendMega-Black.ttf
+          weight: 900
+        - asset: assets/fonts/LexendMega/LexendMega-ExtraBold.ttf
+          weight: 900
+
+    - family: MazzardH
+      fonts:
+        - asset: assets/fonts/MazzardH/MazzardH-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/MazzardH/MazzardH-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/MazzardH/MazzardH-Medium.ttf
+          weight: 500
+
+flutter_launcher_icons:
+  ios: true
+  image_path: "assets/images/icon/icon.png"
+  remove_alpha_ios: true

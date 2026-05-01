@@ -41,6 +41,15 @@ interface Scenario {
   feedback: string;
 }
 
+interface TradingIdea {
+  id: string;
+  action: "buy" | "sell" | "hold";
+  symbol?: string;
+  display: string;
+  amount?: number;
+  rationale: string;
+}
+
 const DEFAULT_ASSETS: Asset[] = [
   { symbol: "SPY", name: "S&P 500 ETF", display: "S&P 500", price: 522.41, change: 0.34, category: "Stock/ETF" },
   { symbol: "QQQ", name: "Nasdaq 100 ETF", display: "NASDAQ", price: 452.9, change: 0.57, category: "Stock/ETF" },
@@ -169,6 +178,134 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+function roundOrderAmount(value: number, maxValue: number) {
+  if (maxValue < MIN_ORDER) {
+    return 0;
+  }
+  const rounded = Math.round(value / 100) * 100;
+  return Math.min(maxValue, Math.max(MIN_ORDER, rounded));
+}
+
+function positionValue(symbol: string, holdings: Record<string, number>, prices: Record<string, number>) {
+  return (holdings[symbol] ?? 0) * (prices[symbol] ?? 0);
+}
+
+function buildTradingIdeas(
+  assets: Asset[],
+  holdings: Record<string, number>,
+  cash: number,
+  prices: Record<string, number>,
+  totalValue: number,
+): TradingIdea[] {
+  const ideas: TradingIdea[] = [];
+  const heldSymbols = Object.entries(holdings)
+    .filter(([symbol, qty]) => qty > 0.0001 && positionValue(symbol, holdings, prices) >= MIN_ORDER)
+    .map(([symbol]) => symbol);
+  const heldCategories = new Set(
+    assets.filter((asset) => heldSymbols.includes(asset.symbol)).map((asset) => asset.category),
+  );
+  const pushIdea = (idea: TradingIdea) => {
+    if (!ideas.some((item) => item.id === idea.id || (item.symbol && item.symbol === idea.symbol))) {
+      ideas.push(idea);
+    }
+  };
+
+  const buyAmount = roundOrderAmount(Math.max(5000, cash * 0.1), cash);
+  const buyCandidates = assets
+    .filter((asset) => asset.change > 0 && asset.price > 0 && buyAmount >= MIN_ORDER)
+    .sort((a, b) => {
+      const aCategoryBoost = heldCategories.has(a.category) ? 0 : 0.35;
+      const bCategoryBoost = heldCategories.has(b.category) ? 0 : 0.35;
+      return b.change + bCategoryBoost - (a.change + aCategoryBoost);
+    });
+
+  const bestBuy = buyCandidates[0];
+  if (bestBuy) {
+    pushIdea({
+      id: `buy-${bestBuy.symbol}`,
+      action: "buy",
+      symbol: bestBuy.symbol,
+      display: `Buy ${bestBuy.display}`,
+      amount: buyAmount,
+      rationale: `${percent(bestBuy.change)} today; strongest positive paper quote with cash available.`,
+    });
+  }
+
+  const sellCandidates = heldSymbols
+    .map((symbol) => {
+      const asset = assets.find((item) => item.symbol === symbol);
+      const value = positionValue(symbol, holdings, prices);
+      const weight = totalValue > 0 ? value / totalValue : 0;
+      return asset ? { asset, value, weight } : null;
+    })
+    .filter((item): item is { asset: Asset; value: number; weight: number } => item !== null)
+    .filter((item) => item.value >= MIN_ORDER && (item.asset.change < 0 || item.weight > 0.35))
+    .sort((a, b) => {
+      const aRisk = a.asset.change < 0 ? Math.abs(a.asset.change) : 0;
+      const bRisk = b.asset.change < 0 ? Math.abs(b.asset.change) : 0;
+      return bRisk + b.weight - (aRisk + a.weight);
+    });
+
+  const bestSell = sellCandidates[0];
+  if (bestSell) {
+    const sellAmount = roundOrderAmount(Math.min(bestSell.value * 0.25, bestSell.value), bestSell.value);
+    if (sellAmount >= MIN_ORDER) {
+      pushIdea({
+        id: `sell-${bestSell.asset.symbol}`,
+        action: "sell",
+        symbol: bestSell.asset.symbol,
+        display: `${bestSell.asset.change < 0 ? "Trim" : "Reduce"} ${bestSell.asset.display}`,
+        amount: sellAmount,
+        rationale:
+          bestSell.asset.change < 0
+            ? `${percent(bestSell.asset.change)} today; trim weakness and protect paper gains.`
+            : `${Math.round(bestSell.weight * 100)}% of portfolio; reduce concentration risk.`,
+      });
+    }
+  }
+
+  const diversificationCandidate = assets
+    .filter((asset) => !heldCategories.has(asset.category) && asset.price > 0 && buyAmount >= MIN_ORDER)
+    .sort((a, b) => b.change - a.change)[0];
+  if ((heldCategories.size < 2 || sellCandidates.some((item) => item.weight > 0.35)) && diversificationCandidate) {
+    pushIdea({
+      id: `diversify-${diversificationCandidate.symbol}`,
+      action: "buy",
+      symbol: diversificationCandidate.symbol,
+      display: `Diversify with ${diversificationCandidate.display}`,
+      amount: buyAmount,
+      rationale: `Adds ${diversificationCandidate.category} exposure; useful when holdings are narrow or concentrated.`,
+    });
+  }
+
+  for (const candidate of buyCandidates) {
+    if (ideas.length >= 3) {
+      break;
+    }
+    pushIdea({
+      id: `watch-${candidate.symbol}`,
+      action: "buy",
+      symbol: candidate.symbol,
+      display: `Watch ${candidate.display}`,
+      amount: buyAmount,
+      rationale: `${percent(candidate.change)} today; momentum candidate for a small paper position.`,
+    });
+  }
+
+  if (!ideas.length) {
+    return [
+      {
+        id: "hold-cash",
+        action: "hold",
+        display: "Hold cash / review watchlist",
+        rationale: "No valid paper order clears the minimum size right now; wait for a cleaner setup.",
+      },
+    ];
+  }
+
+  return ideas.slice(0, 3);
+}
+
 function maxDrawdown(values: number[]) {
   let peak = values[0] ?? STARTING_CASH;
   let worst = 0;
@@ -261,6 +398,19 @@ export default function PaperTradingGame() {
   const selectedPrice = effectivePrices[selectedSymbol] ?? 0;
   const selectedQty = holdings[selectedSymbol] ?? 0;
   const numericAmount = Number(amount);
+  const tradingIdeas = useMemo(
+    () => buildTradingIdeas(assets, holdings, cash, effectivePrices, portfolioValue),
+    [assets, cash, effectivePrices, holdings, portfolioValue],
+  );
+
+  const applyTradingIdea = (idea: TradingIdea) => {
+    if (idea.action === "hold" || !idea.symbol || !idea.amount) {
+      return;
+    }
+    setSide(idea.action);
+    setSelectedSymbol(idea.symbol);
+    setAmount(String(Math.round(idea.amount)));
+  };
 
   const placeOrder = () => {
     if (complete) {
@@ -420,7 +570,7 @@ export default function PaperTradingGame() {
   }
 
   return (
-    <div className="grid min-h-[640px] gap-4 p-4 xl:grid-cols-[1.1fr_0.9fr_1fr]">
+    <div className="grid min-h-[640px] gap-4 p-4 xl:grid-cols-[1fr_0.9fr_0.85fr_1fr]">
       <section className="rounded-lg border border-accent-border bg-bg-primary p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -456,6 +606,54 @@ export default function PaperTradingGame() {
         <Button className="mt-4 w-full" onClick={() => void lockRound()}>
           Lock Round & Move Market
         </Button>
+      </section>
+
+      <section className="rounded-lg border border-accent-border bg-bg-primary p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-white">Today&apos;s Trading Ideas</h3>
+            <p className="mt-1 text-[11px] leading-4 text-text-muted">
+              Educational paper-trading prompts from the latest watchlist quotes. Not financial advice.
+            </p>
+          </div>
+          <span className="rounded-full bg-brand-blue/10 px-2 py-1 text-[10px] font-bold uppercase text-accent-teal">
+            Paper
+          </span>
+        </div>
+        <div className="mt-4 space-y-2">
+          {tradingIdeas.map((idea) => (
+            <div key={idea.id} className="rounded-lg border border-accent-border bg-bg-tertiary p-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      idea.action === "buy"
+                        ? "bg-accent-green/15 text-accent-green"
+                        : idea.action === "sell"
+                          ? "bg-accent-red/15 text-accent-red"
+                          : "bg-accent-border text-text-muted"
+                    }`}
+                  >
+                    {idea.action}
+                  </span>
+                  <span className="truncate text-sm font-bold text-white">{idea.display}</span>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-text-muted">{idea.rationale}</p>
+                {idea.amount ? (
+                  <p className="mt-1 font-mono text-xs text-accent-gold">{money(idea.amount)} paper order</p>
+                ) : null}
+              </div>
+              <Button
+                className="mt-3 w-full px-3 py-2 text-xs"
+                variant="secondary"
+                disabled={idea.action === "hold"}
+                onClick={() => applyTradingIdea(idea)}
+              >
+                Apply Idea
+              </Button>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="rounded-lg border border-accent-border bg-bg-primary p-4">

@@ -87,13 +87,11 @@ export default function BudgetBlitzGame() {
       body: JSON.stringify({ gameName: "budget_blitz", score: state.score, roundsPlayed: 6, outcome: "win", metadata: { xp } }),
     });
     if (res.ok) {
-      const data = (await res.json()) as { xpAwarded?: number };
+      const data = (await res.json()) as { xpAwarded?: number; xpTotal?: number; level?: number };
       const xpAwarded = data.xpAwarded ?? 0;
       if (email && typeof data.xpAwarded === "number") {
         const localGameXp = recordGameXp(email, { gameName: "budget_blitz", xpAwarded, score: state.score });
-        if (localGameXp) {
-          setUserXP(localGameXp.totalXp, localGameXp.level);
-        }
+        setUserXP(data.xpTotal ?? localGameXp?.totalXp ?? 0, data.level ?? localGameXp?.level ?? 1);
       }
       pushToast({ title: `🎉 +${xpAwarded} XP earned!` });
     } else {

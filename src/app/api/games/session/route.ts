@@ -21,6 +21,11 @@ export async function POST(req: Request) {
   const supabase = getSupabaseAdmin();
   const score = body.score ?? 0;
   const xp = Math.max(25, Math.min(100, Math.round(score / 15))) + (body.outcome === "win" ? 50 : 0);
+  const metadata = {
+    ...(body.metadata ?? {}),
+    xp_awarded: xp,
+    xp_formula: "score_div_15_min_25_max_100_win_bonus_50",
+  };
 
   const { error } = await supabase.from("game_sessions").insert({
     user_id: userId,
@@ -29,7 +34,7 @@ export async function POST(req: Request) {
     duration_seconds: body.durationSeconds ?? 0,
     rounds_played: body.roundsPlayed ?? 0,
     outcome: body.outcome ?? "incomplete",
-    metadata: body.metadata ?? {},
+    metadata,
   });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -37,13 +42,21 @@ export async function POST(req: Request) {
 
   const { data: user } = await supabase.from("users").select("xp_total").eq("id", userId).single();
   const nextXP = (typeof user?.xp_total === "number" ? user.xp_total : 0) + xp;
-  await supabase.from("users").update({ xp_total: nextXP, level: levelFromXP(nextXP) }).eq("id", userId);
-  await supabase.from("learning_milestones").insert({
+  const nextLevel = levelFromXP(nextXP);
+  const { error: userError } = await supabase.from("users").update({ xp_total: nextXP, level: nextLevel }).eq("id", userId);
+  if (userError) {
+    return NextResponse.json({ error: userError.message }, { status: 500 });
+  }
+
+  const { error: milestoneError } = await supabase.from("learning_milestones").insert({
     user_id: userId,
     milestone_type: "game_completed",
     milestone_value: body.gameName ?? "game",
     xp_awarded: xp,
   });
+  if (milestoneError) {
+    return NextResponse.json({ error: milestoneError.message }, { status: 500 });
+  }
 
-  return NextResponse.json({ success: true, xpAwarded: xp });
+  return NextResponse.json({ success: true, xpAwarded: xp, xpTotal: nextXP, level: nextLevel });
 }

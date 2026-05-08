@@ -41,6 +41,10 @@ Development fallbacks are included for market/news/AI routes when keys are empty
 
 See `.env.example` for the complete list. Never commit real values from `.env.local`.
 
+## Project Flow Documentation
+
+See [`docs/PROJECT_FLOW.md`](docs/PROJECT_FLOW.md) for the complete architecture, application flow, API inventory, Supabase data model, and user journey documentation.
+
 ## Supabase Setup
 
 Create a free Supabase project, then run the SQL from the PRD in the Supabase SQL editor. Ensure Row Level Security is enabled on every table. The app uses the service role only in server route handlers and never imports it into client components.

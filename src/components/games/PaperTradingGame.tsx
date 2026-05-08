@@ -511,12 +511,10 @@ export default function PaperTradingGame() {
       }),
     });
     if (res.ok) {
-      const data = (await res.json()) as { xpAwarded?: number };
+      const data = (await res.json()) as { xpAwarded?: number; xpTotal?: number; level?: number };
       if (email && typeof data.xpAwarded === "number") {
         const localGameXp = recordGameXp(email, { gameName: "paper_trader", xpAwarded: data.xpAwarded, score: finalScore });
-        if (localGameXp) {
-          setUserXP(localGameXp.totalXp, localGameXp.level);
-        }
+        setUserXP(data.xpTotal ?? localGameXp?.totalXp ?? 0, data.level ?? localGameXp?.level ?? 1);
       }
       setSaved(true);
       pushToast({ title: `Paper Trader saved`, description: `+${data.xpAwarded ?? 0} XP earned.` });

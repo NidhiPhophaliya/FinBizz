@@ -9,6 +9,28 @@ interface XPBody {
   milestoneValue?: string;
 }
 
+export async function GET() {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: user, error } = await getSupabaseAdmin()
+    .from("users")
+    .select("xp_total, level")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    xpTotal: typeof user?.xp_total === "number" ? user.xp_total : 0,
+    level: typeof user?.level === "number" ? user.level : 1,
+  });
+}
+
 export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) {

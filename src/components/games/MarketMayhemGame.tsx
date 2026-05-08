@@ -51,12 +51,10 @@ export default function MarketMayhemGame() {
         }),
       });
       if (res.ok) {
-        const data = (await res.json()) as { xpAwarded?: number };
+        const data = (await res.json()) as { xpAwarded?: number; xpTotal?: number; level?: number };
         if (email && typeof data.xpAwarded === "number") {
           const localGameXp = recordGameXp(email, { gameName: "market_mayhem", xpAwarded: data.xpAwarded, score });
-          if (localGameXp) {
-            setUserXP(localGameXp.totalXp, localGameXp.level);
-          }
+          setUserXP(data.xpTotal ?? localGameXp?.totalXp ?? 0, data.level ?? localGameXp?.level ?? 1);
         }
         pushToast({ title: "Market Mayhem saved", description: `+${data.xpAwarded ?? 0} XP earned.` });
       } else {

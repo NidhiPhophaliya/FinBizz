@@ -11,16 +11,11 @@ export default function GamesHubButton() {
   return (
     <>
       <button
-        className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-bold text-white shadow-[0_0_15px_#ffd78060,0_0_30px_#42a5f530] transition hover:scale-105"
-        style={{
-          background: "linear-gradient(135deg, #ffd780, #42a5f5, #7ee4e3)",
-          backgroundSize: "200%",
-          animation: "backgroundShift 4s ease infinite",
-        }}
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#31424a] bg-[#141b25] px-3 text-sm font-semibold text-[#d8efe8] transition hover:border-[#5fa99d] hover:bg-[#182433] focus:outline-none focus:ring-2 focus:ring-[#86d7c7] focus:ring-offset-2 focus:ring-offset-[#0f111a]"
         onClick={() => setOpen(true)}
       >
         <Gamepad2 size={17} />
-        <span className="hidden sm:inline">GAMES HUB</span>
+        <span className="hidden sm:inline">Games</span>
       </button>
       <GamesHubModal open={open} onClose={() => setOpen(false)} />
     </>

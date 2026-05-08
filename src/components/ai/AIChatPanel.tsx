@@ -11,6 +11,12 @@ interface ChatMessage {
   content: string;
 }
 
+interface ChatResponse {
+  reply?: string;
+  sessionId?: string;
+  error?: string;
+}
+
 const prompts = [
   "What is a P/E ratio?",
   "Explain compound interest",
@@ -26,11 +32,13 @@ export default function AIChatPanel({ open, onClose }: { open: boolean; onClose:
   const [loading, setLoading] = useState(false);
 
   const send = async (message: string) => {
-    if (!message.trim() || loading) {
+    const trimmedMessage = message.trim();
+
+    if (!trimmedMessage || loading) {
       return;
     }
 
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: message }];
+    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmedMessage }];
     setMessages(nextMessages);
     setInput("");
     setLoading(true);
@@ -39,15 +47,32 @@ export default function AIChatPanel({ open, onClose }: { open: boolean; onClose:
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, sessionId, history: messages }),
+        body: JSON.stringify({ message: trimmedMessage, sessionId, history: messages }),
       });
-      const data = (await res.json()) as { reply?: string; sessionId?: string; error?: string };
-      setSessionId(data.sessionId ?? sessionId);
+
+      const data = (await res.json().catch(() => null)) as ChatResponse | null;
+
+      if (!res.ok) {
+        throw new Error(data?.error ?? `AI request failed with status ${res.status}`);
+      }
+
+      setSessionId(data?.sessionId ?? sessionId);
       setMessages([
         ...nextMessages,
         {
           role: "assistant",
-          content: data.reply ?? data.error ?? "AI service unavailable. Please try again.",
+          content: data?.reply ?? data?.error ?? "AI service unavailable. Please try again.",
+        },
+      ]);
+    } catch (error) {
+      setMessages([
+        ...nextMessages,
+        {
+          role: "assistant",
+          content:
+            error instanceof Error
+              ? error.message
+              : "AI service unavailable. Please try again.",
         },
       ]);
     } finally {

@@ -68,12 +68,9 @@ Protected traffic is handled in `src/proxy.ts`, and every protected API route al
 
 ## Alpha Flutter Game
 
-To enable Alpha:
+Alpha is integrated in the Games Hub as an iframe to the deployed Flutter Web app:
 
-1. Clone `https://github.com/vrevolverrr/alpha`
-2. Run `flutter build web --release --base-href /games/alpha/`
-3. Copy `build/web/` into `public/games/alpha/`
-4. Replace the placeholder in `src/components/games/AlphaGame.tsx` with an iframe pointing at `/games/alpha/index.html`
+- `https://finbizz-89872.web.app/`
 
 Attribution: Original game by Bryan Soong (NTU IIC), CC-BY-NC-4.0.
 
